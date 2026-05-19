@@ -1022,3 +1022,604 @@ graph TD
 </select>
 ```
 
+
+### 16. Xml映射文件中，除了常见的select|insert|update|delete标签之外，还有哪些标签?
+
+MyBatis 的 XML 映射文件除了四大 CRUD 标签外，还提供了以下重要标签：
+
+| 标签 | 作用 |
+|------|------|
+| `<resultMap>` | 自定义结果集映射，处理列名与属性名不一致、关联查询等 |
+| `<sql>` | 定义可复用的 SQL 片段 |
+| `<include>` | 引用 `<sql>` 定义的片段 |
+| `<if>` | 条件判断，动态拼接 SQL |
+| `<choose>/<when>/<otherwise>` | 多条件分支，类似 switch-case |
+| `<where>` | 智能处理 WHERE 子句，自动去除多余的 AND/OR |
+| `<set>` | 智能处理 SET 子句，自动去除多余的逗号 |
+| `<foreach>` | 遍历集合，用于 IN 查询或批量操作 |
+| `<trim>` | 自定义前缀/后缀处理，是 where/set 的底层实现 |
+| `<bind>` | 创建变量并绑定到上下文，常用于模糊查询 |
+| `<cache>` | 开启当前 namespace 的二级缓存 |
+| `<cache-ref>` | 引用其他命名空间的缓存配置 |
+| `<discriminator>` | 鉴别器，根据某列值选择不同的结果映射 |
+
+**`<resultMap>` 的子标签：**
+
+| 子标签 | 作用 |
+|--------|------|
+| `<id>` | 映射主键列 |
+| `<result>` | 映射普通列 |
+| `<association>` | 映射一对一关联对象 |
+| `<collection>` | 映射一对多关联集合 |
+| `<discriminator>` | 鉴别器，根据值选择不同映射 |
+| `<constructor>` | 通过构造函数映射结果 |
+
+```xml
+<!-- 完整的 resultMap 示例 -->
+<resultMap id="userResultMap" type="User">
+    <id column="id" property="id"/>
+    <result column="user_name" property="userName"/>
+    <result column="email" property="email"/>
+    <!-- 一对一关联 -->
+    <association property="address" javaType="Address">
+        <id column="addr_id" property="id"/>
+        <result column="city" property="city"/>
+    </association>
+    <!-- 一对多关联 -->
+    <collection property="orders" ofType="Order">
+        <id column="order_id" property="id"/>
+        <result column="amount" property="amount"/>
+    </collection>
+</resultMap>
+```
+
+---
+
+### 17. Mybatis的Xml映射文件中，不同的Xml映射文件，id是否可以重复?
+
+**结论：不同的 XML 映射文件，id 可以重复；同一个 XML 映射文件中，id 不能重复。**
+
+**原因：**
+
+MyBatis 使用 **namespace + id** 作为 Statement 的唯一标识（Map 的 key）。
+
+- 完整的 Statement ID = `namespace.id`，例如：`com.example.mapper.UserMapper.selectById`
+- 只要 namespace 不同，即使 id 相同也不会冲突
+
+```xml
+<!-- UserMapper.xml -->
+<mapper namespace="com.example.mapper.UserMapper">
+    <select id="selectById" resultType="User">
+        SELECT * FROM user WHERE id = #{id}
+    </select>
+</mapper>
+
+<!-- OrderMapper.xml -->
+<mapper namespace="com.example.mapper.OrderMapper">
+    <!-- id 与 UserMapper 中的相同，但 namespace 不同，不冲突 -->
+    <select id="selectById" resultType="Order">
+        SELECT * FROM orders WHERE id = #{id}
+    </select>
+</mapper>
+```
+
+> ⚠️ 如果不配置 namespace，不同文件中相同的 id 会产生冲突，因此 **namespace 是必须配置的**。
+
+---
+
+### 18. 为什么说Mybatis是半自动ORM映射工具?它与全自动的区别在哪里?
+
+**全自动 ORM（如 Hibernate）：**
+- 完全屏蔽 SQL，开发者只操作对象
+- 框架自动生成 SQL（SELECT、INSERT、UPDATE、DELETE）
+- 优点：开发效率高，无需写 SQL
+- 缺点：SQL 不可控，复杂查询难以优化
+
+**半自动 ORM（MyBatis）：**
+- 需要开发者手动编写 SQL
+- 框架负责 SQL 执行结果与 Java 对象的映射
+- 优点：SQL 完全可控，便于优化，灵活性高
+- 缺点：需要编写 SQL，开发量相对较大
+
+```mermaid
+graph LR
+    subgraph 全自动ORM-Hibernate
+        A1[Java对象操作] -->|框架自动生成SQL| B1[(数据库)]
+        B1 -->|自动映射| A1
+    end
+    subgraph 半自动ORM-MyBatis
+        A2[Java对象操作] -->|开发者手写SQL| B2[(数据库)]
+        B2 -->|自动结果映射| A2
+    end
+```
+
+**MyBatis 被称为"半自动"的核心原因：**
+- 查询 SQL 需要手动编写（不自动生成）
+- 查询结果到 Java 对象的映射是自动完成的（通过 resultMap 或 resultType）
+
+---
+
+### 19. 一对一、一对多的关联查询?
+
+**一对一关联查询（用户与地址）：**
+
+```xml
+<!-- 嵌套结果映射：一次 JOIN 查询 -->
+<resultMap id="userWithAddressMap" type="User">
+    <id column="id" property="id"/>
+    <result column="name" property="name"/>
+    <association property="address" javaType="Address">
+        <id column="addr_id" property="id"/>
+        <result column="city" property="city"/>
+        <result column="street" property="street"/>
+    </association>
+</resultMap>
+
+<select id="selectUserWithAddress" resultMap="userWithAddressMap">
+    SELECT u.id, u.name, a.id as addr_id, a.city, a.street
+    FROM user u LEFT JOIN address a ON u.address_id = a.id
+    WHERE u.id = #{id}
+</select>
+```
+
+**一对多关联查询（用户与订单）：**
+
+```xml
+<resultMap id="userWithOrdersMap" type="User">
+    <id column="id" property="id"/>
+    <result column="name" property="name"/>
+    <collection property="orders" ofType="Order">
+        <id column="order_id" property="id"/>
+        <result column="amount" property="amount"/>
+        <result column="status" property="status"/>
+    </collection>
+</resultMap>
+
+<select id="selectUserWithOrders" resultMap="userWithOrdersMap">
+    SELECT u.id, u.name, o.id as order_id, o.amount, o.status
+    FROM user u LEFT JOIN orders o ON u.id = o.user_id
+    WHERE u.id = #{id}
+</select>
+```
+
+---
+
+### 20. MyBatis实现一对一有几种方式?具体怎么操作的?
+
+MyBatis 实现一对一关联有 **两种方式**：
+
+**方式一：联合查询（嵌套结果映射）—— 推荐**
+
+通过 JOIN 一次查出所有数据，用 `<association>` 映射关联对象。
+
+```xml
+<resultMap id="studentTeacherMap" type="Student">
+    <id column="s_id" property="id"/>
+    <result column="s_name" property="name"/>
+    <association property="teacher" javaType="Teacher">
+        <id column="t_id" property="id"/>
+        <result column="t_name" property="name"/>
+    </association>
+</resultMap>
+
+<select id="selectStudentWithTeacher" resultMap="studentTeacherMap">
+    SELECT s.id as s_id, s.name as s_name,
+           t.id as t_id, t.name as t_name
+    FROM student s INNER JOIN teacher t ON s.teacher_id = t.id
+    WHERE s.id = #{id}
+</select>
+```
+
+**方式二：嵌套查询（分步查询）—— 支持懒加载**
+
+先查主表，再根据外键查关联表。
+
+```xml
+<resultMap id="studentMap" type="Student">
+    <id column="id" property="id"/>
+    <result column="name" property="name"/>
+    <association property="teacher"
+                 column="teacher_id"
+                 select="com.example.mapper.TeacherMapper.selectById"
+                 fetchType="lazy"/>
+</resultMap>
+
+<select id="selectStudentById" resultMap="studentMap">
+    SELECT id, name, teacher_id FROM student WHERE id = #{id}
+</select>
+```
+
+| 对比项 | 联合查询 | 嵌套查询 |
+|--------|----------|----------|
+| SQL 数量 | 1 条 | 2 条（有 N+1 问题） |
+| 性能 | 较好 | 可能较差 |
+| 懒加载 | 不支持 | 支持 |
+| 适用场景 | 总是需要关联数据 | 关联数据不总是需要 |
+
+---
+
+### 21. MyBatis实现一对多有几种方式,怎么操作的?
+
+MyBatis 实现一对多同样有 **两种方式**，使用 `<collection>` 标签：
+
+**方式一：联合查询（嵌套结果映射）**
+
+```xml
+<resultMap id="classWithStudentsMap" type="Clazz">
+    <id column="c_id" property="id"/>
+    <result column="c_name" property="name"/>
+    <collection property="students" ofType="Student">
+        <id column="s_id" property="id"/>
+        <result column="s_name" property="name"/>
+        <result column="s_age" property="age"/>
+    </collection>
+</resultMap>
+
+<select id="selectClassWithStudents" resultMap="classWithStudentsMap">
+    SELECT c.id as c_id, c.name as c_name,
+           s.id as s_id, s.name as s_name, s.age as s_age
+    FROM class c LEFT JOIN student s ON c.id = s.class_id
+    WHERE c.id = #{id}
+</select>
+```
+
+**方式二：嵌套查询（分步查询）**
+
+```xml
+<resultMap id="classMap" type="Clazz">
+    <id column="id" property="id"/>
+    <result column="name" property="name"/>
+    <collection property="students"
+                column="id"
+                ofType="Student"
+                select="com.example.mapper.StudentMapper.selectByClassId"
+                fetchType="lazy"/>
+</resultMap>
+
+<select id="selectClassById" resultMap="classMap">
+    SELECT id, name FROM class WHERE id = #{id}
+</select>
+```
+
+---
+
+### 22. Mybatis是否支持延迟加载?如果支持，它的实现原理是什么?
+
+**MyBatis 支持延迟加载（Lazy Loading）**，默认关闭，需手动开启。
+
+**开启方式：**
+
+```xml
+<!-- mybatis-config.xml 全局开启 -->
+<settings>
+    <setting name="lazyLoadingEnabled" value="true"/>
+    <setting name="aggressiveLazyLoading" value="false"/>
+</settings>
+```
+
+也可以在具体关联上单独设置：
+
+```xml
+<association property="address" column="address_id"
+             select="selectAddressById"
+             fetchType="lazy"/>
+```
+
+**实现原理（基于动态代理）：**
+
+```mermaid
+sequenceDiagram
+    participant App as 应用代码
+    participant Proxy as CGLIB/Javassist代理对象
+    participant Mapper as MyBatis Mapper
+    participant DB as 数据库
+
+    App->>Proxy: user = selectUserById(1)
+    Note over Proxy: 只查user表，address为null
+    Proxy-->>App: 返回代理对象（address未加载）
+
+    App->>Proxy: user.getAddress()
+    Note over Proxy: 检测到address未加载，触发子查询
+    Proxy->>Mapper: selectAddressById(addressId)
+    Mapper->>DB: SELECT * FROM address WHERE id=?
+    DB-->>Mapper: 返回数据
+    Mapper-->>Proxy: 填充address属性
+    Proxy-->>App: 返回address对象
+```
+
+**核心步骤：**
+1. 查询主对象时，MyBatis 用 CGLIB 或 Javassist 为返回对象创建**代理**
+2. 代理对象中关联属性初始为 null，同时记录待执行的子查询信息
+3. 当应用调用 `getXxx()` 时，代理拦截该调用
+4. 检测到属性未加载，则执行子查询并填充属性
+5. 后续再次调用时，属性已有值，直接返回，不再查询数据库
+
+---
+
+### 23. Mybatis的一级、二级缓存
+
+**一级缓存（SqlSession 级别）：**
+
+- 默认开启，作用域为同一个 SqlSession
+- SqlSession 关闭、调用 `clearCache()`、或执行写操作后自动清空
+
+```mermaid
+sequenceDiagram
+    participant App
+    participant Cache as 一级缓存
+    participant DB as 数据库
+
+    App->>Cache: 查询 selectById(1)
+    Cache-->>App: 缓存未命中
+    App->>DB: SELECT * FROM user WHERE id=1
+    DB-->>Cache: 结果存入缓存
+    Cache-->>App: 返回结果
+
+    App->>Cache: 再次查询 selectById(1)
+    Cache-->>App: 缓存命中，直接返回（不查DB）
+```
+
+**二级缓存（Mapper namespace 级别）：**
+
+- 默认关闭，需手动开启，作用域为同一 namespace 的所有 SqlSession
+- SqlSession **提交或关闭**后数据才写入二级缓存
+- 缓存对象需实现 `Serializable` 接口
+
+```xml
+<!-- 1. mybatis-config.xml 全局开启 -->
+<settings>
+    <setting name="cacheEnabled" value="true"/>
+</settings>
+
+<!-- 2. 在对应的 Mapper.xml 中开启 -->
+<cache eviction="LRU" flushInterval="60000" size="512" readOnly="true"/>
+```
+
+**一级缓存 vs 二级缓存：**
+
+| 对比项 | 一级缓存 | 二级缓存 |
+|--------|----------|----------|
+| 作用域 | SqlSession | Mapper namespace |
+| 默认状态 | 开启 | 关闭 |
+| 共享范围 | 同一 SqlSession | 同一 namespace 的所有 SqlSession |
+| 生效时机 | 查询后立即 | SqlSession 提交/关闭后 |
+| 序列化要求 | 不需要 | 需要实现 Serializable |
+
+**查询顺序：** 二级缓存 → 一级缓存 → 数据库
+
+---
+
+### 24. 什么是MyBatis的接口绑定?有哪些实现方式?
+
+**接口绑定**是指将 Mapper 接口与 XML 映射文件（或注解）绑定，使调用接口方法时自动执行对应的 SQL，无需手动写实现类。
+
+**实现方式一：XML 映射文件绑定（推荐）**
+
+要求：XML 的 namespace 与接口全限定名一致，SQL 的 id 与方法名一致。
+
+```java
+public interface UserMapper {
+    User selectById(Long id);
+    List<User> selectAll();
+}
+```
+
+```xml
+<mapper namespace="com.example.mapper.UserMapper">
+    <select id="selectById" resultType="User">
+        SELECT * FROM user WHERE id = #{id}
+    </select>
+    <select id="selectAll" resultType="User">
+        SELECT * FROM user
+    </select>
+</mapper>
+```
+
+**实现方式二：注解绑定**
+
+直接在接口方法上使用 `@Select`、`@Insert`、`@Update`、`@Delete` 注解。
+
+```java
+public interface UserMapper {
+    @Select("SELECT * FROM user WHERE id = #{id}")
+    User selectById(Long id);
+
+    @Insert("INSERT INTO user(name, email) VALUES(#{name}, #{email})")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    int insert(User user);
+
+    @Update("UPDATE user SET name=#{name} WHERE id=#{id}")
+    int update(User user);
+
+    @Delete("DELETE FROM user WHERE id = #{id}")
+    int deleteById(Long id);
+}
+```
+
+| 对比项 | XML 绑定 | 注解绑定 |
+|--------|----------|----------|
+| 复杂 SQL | 支持（动态 SQL） | 不方便（字符串拼接） |
+| 可维护性 | 高（SQL 集中管理） | 低（SQL 分散于代码中） |
+| 推荐场景 | 复杂业务 SQL | 简单 CRUD |
+
+---
+
+### 25. 使用MyBatis的mapper接口调用时有哪些要求?
+
+1. **namespace 必须与接口全限定名完全一致**
+   ```xml
+   <mapper namespace="com.example.mapper.UserMapper">
+   ```
+
+2. **SQL 的 id 必须与接口方法名一致**
+
+3. **参数类型兼容**
+   - 单参数：`#{参数名}` 或 `#{param1}`
+   - 多参数：必须用 `@Param` 注解或传 Map
+
+4. **返回类型兼容**
+   - 查询单个：返回对应实体类
+   - 查询列表：返回 `List<实体类>`
+   - 查询数量：返回 `int` 或 `long`
+
+5. **Mapper 接口不能有实现类**（MyBatis 通过动态代理自动生成）
+
+6. **接口方法不支持重载**（XML 中 id 不能重复）
+
+```java
+public interface UserMapper {
+    // 单参数
+    User selectById(Long id);
+
+    // 多参数必须用 @Param
+    User selectByNameAndAge(@Param("name") String name, @Param("age") int age);
+
+    // 返回列表
+    List<User> selectAll();
+
+    // 返回数量
+    int countByAge(int age);
+}
+```
+
+---
+
+### 26. Mapper编写有哪几种方式?
+
+**方式一：接口实现类方式（原始 DAO，不推荐）**
+
+手动调用 SqlSession 执行 SQL，代码冗余。
+
+```java
+public class UserDaoImpl implements UserDao {
+    private SqlSessionFactory sqlSessionFactory;
+
+    @Override
+    public User selectById(Long id) {
+        try (SqlSession session = sqlSessionFactory.openSession()) {
+            return session.selectOne("com.example.mapper.UserMapper.selectById", id);
+        }
+    }
+}
+```
+
+**方式二：Mapper 接口 + XML 映射文件（推荐）**
+
+只需定义接口，XML 写 SQL，MyBatis 自动生成代理实现。
+
+```java
+public interface UserMapper {
+    User selectById(Long id);
+}
+```
+
+```xml
+<mapper namespace="com.example.mapper.UserMapper">
+    <select id="selectById" resultType="User">
+        SELECT * FROM user WHERE id = #{id}
+    </select>
+</mapper>
+```
+
+**方式三：Mapper 接口 + 注解（适合简单 SQL）**
+
+```java
+public interface UserMapper {
+    @Select("SELECT * FROM user WHERE id = #{id}")
+    User selectById(Long id);
+}
+```
+
+| 方式 | 代码量 | 复杂 SQL | 推荐度 |
+|------|--------|----------|--------|
+| 接口实现类 | 多 | 支持 | ★☆☆ 不推荐 |
+| 接口 + XML | 少 | 完整支持动态 SQL | ★★★ 首选 |
+| 接口 + 注解 | 最少 | 不方便 | ★★☆ 简单场景 |
+
+---
+
+### 27. 简述Mybatis的插件运行原理,以及如何编写一个插件
+
+**插件运行原理：**
+
+MyBatis 插件基于 **责任链模式 + JDK 动态代理** 实现，可以拦截以下四大核心对象的方法：
+
+| 拦截对象 | 类名 | 常用拦截方法 |
+|----------|------|-------------|
+| 执行器 | `Executor` | update, query, commit, rollback |
+| 参数处理器 | `ParameterHandler` | setParameters |
+| 结果集处理器 | `ResultSetHandler` | handleResultSets |
+| SQL 语句处理器 | `StatementHandler` | prepare, parameterize, query, update |
+
+```mermaid
+graph LR
+    A[MyBatis执行] --> B[Plugin1代理]
+    B --> C[Plugin2代理]
+    C --> D[Plugin3代理]
+    D --> E[真实执行对象]
+    E --> F[(数据库)]
+```
+
+**编写插件的三个步骤：**
+
+**第一步：实现 Interceptor 接口，添加注解声明拦截点**
+
+```java
+@Intercepts({
+    @Signature(
+        type = StatementHandler.class,   // 拦截哪个对象
+        method = "query",                // 拦截哪个方法
+        args = {Statement.class, ResultHandler.class}  // 方法参数类型
+    )
+})
+public class SqlCostPlugin implements Interceptor {
+
+    @Override
+    public Object intercept(Invocation invocation) throws Throwable {
+        long start = System.currentTimeMillis();
+        try {
+            // 调用原始方法
+            return invocation.proceed();
+        } finally {
+            long cost = System.currentTimeMillis() - start;
+            StatementHandler handler = (StatementHandler) invocation.getTarget();
+            BoundSql boundSql = handler.getBoundSql();
+            System.out.println("SQL: " + boundSql.getSql());
+            System.out.println("耗时: " + cost + "ms");
+            if (cost > 1000) {
+                System.out.println("⚠️ 慢 SQL 告警！");
+            }
+        }
+    }
+
+    @Override
+    public Object plugin(Object target) {
+        // 使用 Plugin.wrap 生成代理对象
+        return Plugin.wrap(target, this);
+    }
+
+    @Override
+    public void setProperties(Properties properties) {
+        // 读取配置参数，如阈值
+        String threshold = properties.getProperty("threshold", "1000");
+    }
+}
+```
+
+**第二步：在 mybatis-config.xml 中注册插件**
+
+```xml
+<plugins>
+    <plugin interceptor="com.example.plugin.SqlCostPlugin">
+        <property name="threshold" value="500"/>
+    </plugin>
+</plugins>
+```
+
+**常见的 MyBatis 插件：**
+
+| 插件 | 功能 |
+|------|------|
+| PageHelper | 自动分页，拦截 query 方法追加 LIMIT |
+| MyBatis-Plus | 通用 CRUD、乐观锁、逻辑删除等增强 |
+| p6spy | SQL 监控，打印完整 SQL 和执行时间 |

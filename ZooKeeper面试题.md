@@ -15,6 +15,7 @@ ZooKeeper 是一个开源的分布式协调服务框架，由 Apache 软件基�
 - **实时性**：在一定时间范围内，客户端能读到最新的数据
 
 **应用场景：**
+
 - 配置管理
 - 分布式锁
 - 集群管理
@@ -38,28 +39,34 @@ graph TB
 ZooKeeper 为分布式应用提供了一系列核心服务和功能：
 
 **1. 文件系统**
+
 - 提供类似文件系统的树形数据结构
 - 每个节点称为 ZNode，可以存储数据
 - 支持层级命名空间
 
 **2. 通知机制**
+
 - 客户端可以在 ZNode 上注册 Watcher 监听
 - 当 ZNode 数据发生变化时，ZooKeeper 会通知所有注册了该节点 Watcher 的客户端
 - 实现了发布/订阅模式
 
 **3. 分布式锁**
+
 - 利用 ZNode 的唯一性和临时节点特性实现分布式锁
 - 支持公平锁（有序节点）和非公平锁
 
 **4. 集群管理**
+
 - 通过临时节点感知集群成员的上下线
 - 实现 Master 选举
 
 **5. 配置管理**
+
 - 集中存储配置信息
 - 通过 Watcher 机制实现配置的动态更新
 
 **6. 命名服务**
+
 - 提供全局唯一的命名空间
 - 类似 DNS 的服务发现功能
 
@@ -89,6 +96,7 @@ mindmap
 ZooKeeper 的数据模型采用树形层级结构，类似于 Unix 文件系统，但有以下特点：
 
 **结构特点：**
+
 - 根节点为 `/`
 - 每个节点称为 ZNode
 - 每个 ZNode 既可以存储数据，也可以有子节点（与文件系统中文件和目录的区别不同）
@@ -157,11 +165,13 @@ ZAB（ZooKeeper Atomic Broadcast，ZooKeeper 原子广播协议）是 ZooKeeper 
 **ZAB 协议的两种模式：**
 
 **1. 崩溃恢复模式（Recovery Mode）**
+
 - 当 ZooKeeper 集群启动或 Leader 崩溃时进入此模式
 - 通过选举产生新的 Leader
 - 新 Leader 确保所有 Follower 与自己数据同步后，退出恢复模式
 
 **2. 消息广播模式（Broadcast Mode）**
+
 - 正常工作状态下的模式
 - Leader 接收客户端写请求，广播给所有 Follower
 - 超过半数 Follower 确认后，提交事务
@@ -218,6 +228,7 @@ ZXID = epoch(高32位) + counter(低32位)
 ZooKeeper 中的 ZNode 分为四种类型，根据是否持久化和是否有序来区分：
 
 **1. 持久节点（PERSISTENT）**
+
 - 创建后永久存在，除非主动删除
 - 不会因为客户端会话结束而消失
 - 适用于存储持久化配置信息
@@ -226,7 +237,8 @@ ZooKeeper 中的 ZNode 分为四种类型，根据是否持久化和是否有序
 create /persistent_node "data"
 ```
 
-**2. 持久顺序节点（PERSISTENT_SEQUENTIAL）**
+**2. 持久顺序节点（PERSISTENT\_SEQUENTIAL）**
+
 - 持久存在，节点名称后自动追加单调递增的数字后缀
 - 后缀格式：10位数字，如 `/node0000000001`
 - 适用于需要全局唯一有序编号的场景
@@ -237,6 +249,7 @@ create -s /sequential_node "data"
 ```
 
 **3. 临时节点（EPHEMERAL）**
+
 - 与客户端会话绑定，会话结束（超时或断开）后自动删除
 - 不能有子节点
 - 适用于服务注册、集群成员管理
@@ -245,7 +258,8 @@ create -s /sequential_node "data"
 create -e /ephemeral_node "data"
 ```
 
-**4. 临时顺序节点（EPHEMERAL_SEQUENTIAL）**
+**4. 临时顺序节点（EPHEMERAL\_SEQUENTIAL）**
+
 - 临时存在 + 自动编号
 - 会话结束后自动删除
 - 适用于实现分布式公平锁
@@ -257,12 +271,12 @@ create -e -s /lock_node "data"
 
 **对比表格：**
 
-| 类型 | 持久性 | 有序性 | 能有子节点 | 典型用途 |
-|------|--------|--------|-----------|---------|
-| PERSISTENT | 持久 | 无序 | 是 | 配置存储 |
-| PERSISTENT_SEQUENTIAL | 持久 | 有序 | 是 | 分布式ID生成 |
-| EPHEMERAL | 临时 | 无序 | 否 | 服务注册 |
-| EPHEMERAL_SEQUENTIAL | 临时 | 有序 | 否 | 分布式锁 |
+| 类型                     | 持久性 | 有序性 | 能有子节点 | 典型用途    |
+| ---------------------- | --- | --- | ----- | ------- |
+| PERSISTENT             | 持久  | 无序  | 是     | 配置存储    |
+| PERSISTENT\_SEQUENTIAL | 持久  | 有序  | 是     | 分布式ID生成 |
+| EPHEMERAL              | 临时  | 无序  | 否     | 服务注册    |
+| EPHEMERAL\_SEQUENTIAL  | 临时  | 有序  | 否     | 分布式锁    |
 
 **ZooKeeper 3.6+ 新增容器节点和TTL节点：**
 
@@ -311,13 +325,13 @@ zk.getChildren("/node", watcher);
 
 **Watcher 事件类型：**
 
-| 事件类型 | 触发条件 |
-|---------|---------|
-| NodeCreated | 节点被创建 |
-| NodeDeleted | 节点被删除 |
-| NodeDataChanged | 节点数据被修改 |
-| NodeChildrenChanged | 子节点列表发生变化 |
-| None | 客户端与服务端连接状态变化 |
+| 事件类型                | 触发条件          |
+| ------------------- | ------------- |
+| NodeCreated         | 节点被创建         |
+| NodeDeleted         | 节点被删除         |
+| NodeDataChanged     | 节点数据被修改       |
+| NodeChildrenChanged | 子节点列表发生变化     |
+| None                | 客户端与服务端连接状态变化 |
 
 **ZooKeeper 3.6+ 持久化 Watcher：**
 
@@ -407,6 +421,7 @@ byte[] data = zk.getData("/mynode", new MyWatcher(), stat);
 ```
 
 **注意事项：**
+
 - 同一个 Watcher 对象可以注册到多个节点
 - 同一个节点可以注册多个不同的 Watcher 对象
 - 默认 Watcher（构造时传入）会接收连接状态变化事件
@@ -470,10 +485,10 @@ public class WatchManager {
 
 **触发时机：**
 
-| 操作 | 触发的Watcher类型 |
-|------|-----------------|
-| setData | getData注册的Watcher |
-| create(path) | exists注册的Watcher + 父节点getChildren的Watcher |
+| 操作           | 触发的Watcher类型                                                  |
+| ------------ | ------------------------------------------------------------- |
+| setData      | getData注册的Watcher                                             |
+| create(path) | exists注册的Watcher + 父节点getChildren的Watcher                     |
 | delete(path) | getData/exists/getChildren注册的Watcher + 父节点getChildren的Watcher |
 
 ## 9. 客户端回调Watcher
@@ -521,6 +536,7 @@ class EventThread extends Thread {
 ```
 
 **重要特性：**
+
 - 所有 Watcher 回调在同一个 EventThread 中串行执行
 - 回调中不能执行耗时操作，否则会阻塞后续事件处理
 - 如需耗时操作，应在回调中异步提交到线程池
@@ -546,23 +562,23 @@ ACL（Access Control List，访问控制列表）是 ZooKeeper 提供的权限�
 
 **权限类型（Permissions）：**
 
-| 权限 | 缩写 | 说明 |
-|------|------|------|
-| CREATE | c | 创建子节点 |
-| READ | r | 读取节点数据和子节点列表 |
-| WRITE | w | 修改节点数据 |
-| DELETE | d | 删除子节点 |
-| ADMIN | a | 设置节点ACL |
+| 权限     | 缩写 | 说明           |
+| ------ | -- | ------------ |
+| CREATE | c  | 创建子节点        |
+| READ   | r  | 读取节点数据和子节点列表 |
+| WRITE  | w  | 修改节点数据       |
+| DELETE | d  | 删除子节点        |
+| ADMIN  | a  | 设置节点ACL      |
 
 **认证方案（Scheme）：**
 
-| Scheme | 说明 |
-|--------|------|
-| world | 所有人，id固定为`anyone` |
-| auth | 已认证的用户 |
-| digest | 用户名:密码方式认证 |
-| ip | 基于IP地址认证 |
-| x509 | 基于客户端X509证书认证 |
+| Scheme | 说明                |
+| ------ | ----------------- |
+| world  | 所有人，id固定为`anyone` |
+| auth   | 已认证的用户            |
+| digest | 用户名:密码方式认证        |
+| ip     | 基于IP地址认证          |
+| x509   | 基于客户端X509证书认证     |
 
 **使用示例：**
 
@@ -598,6 +614,7 @@ zk.addAuthInfo("digest", "user:password".getBytes());
 ```
 
 **ACL 特点：**
+
 - ACL 不具有继承性，每个节点的 ACL 独立设置
 - ZooKeeper 默认使用 `world:anyone:cdrwa`（所有权限）
 - 生产环境建议配置严格的 ACL 控制
@@ -646,11 +663,13 @@ graph LR
 ```
 
 **优点：**
+
 - 不同应用使用同一个 ZooKeeper 集群，互不干扰
 - 简化客户端路径管理，无需每次都写完整路径
 - 实现多租户隔离
 
 **注意事项：**
+
 - Chroot 路径必须在连接前已存在于 ZooKeeper 中
 - Chroot 只影响客户端视角，服务端存储的仍是完整路径
 
@@ -672,13 +691,13 @@ stateDiagram-v2
 
 **会话核心参数：**
 
-| 参数 | 说明 |
-|------|------|
-| sessionId | 全局唯一的会话ID |
-| sessionTimeout | 会话超时时间（客户端设置，服务端协商） |
-| tickTime | 服务端基本时间单位（默认2000ms） |
-| minSessionTimeout | 最小超时时间（2 * tickTime） |
-| maxSessionTimeout | 最大超时时间（20 * tickTime） |
+| 参数                | 说明                     |
+| ----------------- | ---------------------- |
+| sessionId         | 全局唯一的会话ID              |
+| sessionTimeout    | 会话超时时间（客户端设置，服务端协商）    |
+| tickTime          | 服务端基本时间单位（默认2000ms）    |
+| minSessionTimeout | 最小超时时间（2 \* tickTime）  |
+| maxSessionTimeout | 最大超时时间（20 \* tickTime） |
 
 **会话超时机制：**
 
@@ -719,18 +738,21 @@ ZooKeeper 使用分桶策略管理会话超时，将超时时间相近的会话�
 ZooKeeper 集群中的服务器有三种角色：
 
 **1. Leader（领导者）**
+
 - 集群中唯一的写请求处理者
 - 负责发起和提交事务
 - 负责与 Follower 进行心跳检测
 - 通过 ZAB 协议广播事务给 Follower
 
 **2. Follower（跟随者）**
+
 - 处理客户端读请求
 - 将写请求转发给 Leader
 - 参与 Leader 选举投票
 - 参与事务提交的 ACK 投票
 
 **3. Observer（观察者）**
+
 - 处理客户端读请求（与 Follower 相同）
 - 将写请求转发给 Leader
 - **不参与** Leader 选举投票
@@ -755,13 +777,13 @@ graph TB
 
 **角色对比：**
 
-| 特性 | Leader | Follower | Observer |
-|------|--------|----------|----------|
-| 处理读请求 | 是 | 是 | 是 |
-| 处理写请求 | 是（直接处理） | 是（转发给Leader） | 是（转发给Leader） |
-| 参与选举 | 是 | 是 | 否 |
-| 参与ACK投票 | 是 | 是 | 否 |
-| 影响写性能 | 是 | 是 | 否 |
+| 特性      | Leader  | Follower     | Observer     |
+| ------- | ------- | ------------ | ------------ |
+| 处理读请求   | 是       | 是            | 是            |
+| 处理写请求   | 是（直接处理） | 是（转发给Leader） | 是（转发给Leader） |
+| 参与选举    | 是       | 是            | 否            |
+| 参与ACK投票 | 是       | 是            | 否            |
+| 影响写性能   | 是       | 是            | 否            |
 
 **配置 Observer：**
 
@@ -778,19 +800,23 @@ server.4=host4:2888:3888:observer  # 指定为Observer
 ZooKeeper 服务器在运行过程中有四种工作状态：
 
 **1. LOOKING（选举状态）**
+
 - 服务器启动时或 Leader 崩溃后进入此状态
 - 正在进行 Leader 选举
 - 不对外提供服务
 
 **2. FOLLOWING（跟随状态）**
+
 - 服务器已确定 Leader，自己作为 Follower
 - 正常工作状态，处理读请求，转发写请求
 
 **3. LEADING（领导状态）**
+
 - 服务器被选为 Leader
 - 正常工作状态，处理所有写请求，广播事务
 
 **4. OBSERVING（观察状态）**
+
 - 服务器作为 Observer 运行
 - 处理读请求，转发写请求，不参与投票
 
@@ -846,20 +872,24 @@ flowchart TD
 **四种同步方式详解：**
 
 **1. DIFF（差异同步）**
+
 - 适用场景：Follower 的 lastZxid 在 Leader 的提交日志范围内
 - 方式：Leader 只发送 Follower 缺少的事务日志
 - 效率最高
 
 **2. TRUNC（回滚同步）**
+
 - 适用场景：Follower 的 lastZxid 比 Leader 的 lastZxid 还大（旧 Leader 崩溃前提交了未广播的事务）
 - 方式：让 Follower 回滚到 Leader 的 lastZxid
 
 **3. SNAP（快照同步）**
+
 - 适用场景：Follower 数据差异太大，或 Follower 是全新节点
 - 方式：Leader 发送完整的数据快照
 - 效率最低，但适用于差异大的情况
 
 **4. TRUNC+DIFF（回滚后差异同步）**
+
 - 适用场景：Follower 有部分超前数据，同时也缺少部分数据
 - 方式：先回滚超前部分，再补充缺失部分
 
@@ -979,11 +1009,11 @@ graph LR
 
 **Master 的缺点及解决方案：**
 
-| 问题 | 解决方案 |
-|------|---------|
-| 单点故障 | 通过选举机制自动切换Master |
+| 问题   | 解决方案               |
+| ---- | ------------------ |
+| 单点故障 | 通过选举机制自动切换Master   |
 | 性能瓶颈 | 读写分离，Observer扩展读能力 |
-| 脑裂问题 | 过半机制，确保只有一个Master |
+| 脑裂问题 | 过半机制，确保只有一个Master  |
 
 **ZooKeeper 的 Master 选举实现：**
 
@@ -1083,6 +1113,7 @@ graph TB
 ```
 
 **生产环境建议：**
+
 - 使用奇数个节点（3、5、7）
 - 跨机房部署时注意网络分区风险
 - 配置合理的 `tickTime` 和 `sessionTimeout`
@@ -1115,16 +1146,16 @@ graph LR
 
 **详细对比：**
 
-| 对比维度 | Nginx 负载均衡 | ZooKeeper 负载均衡 |
-|---------|--------------|------------------|
-| 工作层次 | 网络层（反向代理） | 应用层（服务注册发现） |
-| 负载均衡位置 | 服务端负载均衡 | 客户端负载均衡 |
-| 服务发现 | 静态配置 | 动态注册发现 |
-| 健康检查 | 主动探测 | 临时节点自动感知 |
-| 性能 | 高（C语言实现） | 相对较低（需要额外通信） |
-| 适用场景 | HTTP/TCP代理 | 微服务注册发现 |
-| 配置变更 | 需要重新加载配置 | 实时动态更新 |
-| 单点问题 | Nginx本身是单点 | 集群部署，高可用 |
+| 对比维度   | Nginx 负载均衡 | ZooKeeper 负载均衡 |
+| ------ | ---------- | -------------- |
+| 工作层次   | 网络层（反向代理）  | 应用层（服务注册发现）    |
+| 负载均衡位置 | 服务端负载均衡    | 客户端负载均衡        |
+| 服务发现   | 静态配置       | 动态注册发现         |
+| 健康检查   | 主动探测       | 临时节点自动感知       |
+| 性能     | 高（C语言实现）   | 相对较低（需要额外通信）   |
+| 适用场景   | HTTP/TCP代理 | 微服务注册发现        |
+| 配置变更   | 需要重新加载配置   | 实时动态更新         |
+| 单点问题   | Nginx本身是单点 | 集群部署，高可用       |
 
 **ZooKeeper 负载均衡实现示例：**
 
@@ -1150,6 +1181,7 @@ public class ServiceConsumer {
 ```
 
 **选择建议：**
+
 - HTTP 服务代理、静态资源分发 → 选 Nginx
 - 微服务注册发现、动态扩缩容 → 选 ZooKeeper（或 Consul、Nacos）
 
@@ -1230,11 +1262,11 @@ echo "3" > /var/lib/zookeeper/myid  # 机器3
 
 **三种模式对比：**
 
-| 模式 | 机器数 | 高可用 | 适用场景 |
-|------|--------|--------|---------|
-| 单机 | 1 | 否 | 开发测试 |
-| 伪集群 | 1（多进程） | 否 | 本地集群测试 |
-| 集群 | 3+ | 是 | 生产环境 |
+| 模式  | 机器数    | 高可用 | 适用场景   |
+| --- | ------ | --- | ------ |
+| 单机  | 1      | 否   | 开发测试   |
+| 伪集群 | 1（多进程） | 否   | 本地集群测试 |
+| 集群  | 3+     | 是   | 生产环境   |
 
 ## 21. 集群最少要几台机器，集群规则是怎样的?
 
@@ -1283,6 +1315,7 @@ graph TD
 ```
 
 **生产环境推荐：**
+
 - 小规模：3 节点
 - 中规模：5 节点
 - 大规模读场景：5 节点 + N 个 Observer
@@ -1338,12 +1371,13 @@ zk.reconfig(null, null, newConfig, -1, stat);
 
 **版本对比：**
 
-| 版本 | 动态扩容 | 说明 |
-|------|---------|------|
-| < 3.5 | 不支持 | 需要停机重启 |
-| >= 3.5 | 支持 | Dynamic Reconfiguration |
+| 版本     | 动态扩容 | 说明                      |
+| ------ | ---- | ----------------------- |
+| < 3.5  | 不支持  | 需要停机重启                  |
+| >= 3.5 | 支持   | Dynamic Reconfiguration |
 
 **注意事项：**
+
 - 动态重配置需要开启 `reconfigEnabled=true`
 - 需要配置相应的 ACL 权限才能执行 reconfig 命令
 - 添加节点后，新节点需要与 Leader 完成数据同步才能提供服务
@@ -1357,6 +1391,7 @@ zk.reconfig(null, null, newConfig, -1, stat);
 **1. 设计哲学：推拉结合**
 
 ZooKeeper 的 Watcher 采用"推通知 + 拉数据"的设计：
+
 - 服务端推送变更通知（轻量）
 - 客户端主动拉取最新数据
 
@@ -1411,12 +1446,12 @@ zk.addWatch("/node", event -> {
 
 **版本对比：**
 
-| 特性 | 传统Watcher | 持久化Watcher(3.6+) |
-|------|------------|-------------------|
-| 触发次数 | 一次 | 持续触发 |
-| 需要重新注册 | 是 | 否 |
-| 内存开销 | 低 | 较高 |
-| 适用场景 | 一次性监听 | 持续监听 |
+| 特性     | 传统Watcher | 持久化Watcher(3.6+) |
+| ------ | --------- | ---------------- |
+| 触发次数   | 一次        | 持续触发             |
+| 需要重新注册 | 是         | 否                |
+| 内存开销   | 低         | 较高               |
+| 适用场景   | 一次性监听     | 持续监听             |
 
 ## 24. Zookeeper的java客户端都有哪些?
 
@@ -1511,15 +1546,16 @@ try {
 
 **客户端对比：**
 
-| 特性 | 原生客户端 | ZkClient | Curator |
-|------|-----------|---------|---------|
-| API 易用性 | 低 | 中 | 高 |
-| 自动重连 | 否 | 是 | 是 |
-| 分布式原语 | 否 | 部分 | 丰富 |
-| 社区活跃度 | 高 | 低 | 高 |
-| 推荐程度 | 学习用 | 不推荐 | 生产推荐 |
+| 特性      | 原生客户端 | ZkClient | Curator |
+| ------- | ----- | -------- | ------- |
+| API 易用性 | 低     | 中        | 高       |
+| 自动重连    | 否     | 是        | 是       |
+| 分布式原语   | 否     | 部分       | 丰富      |
+| 社区活跃度   | 高     | 低        | 高       |
+| 推荐程度    | 学习用   | 不推荐      | 生产推荐    |
 
 **Curator 提供的分布式原语（Recipes）：**
+
 - `InterProcessMutex`：分布式互斥锁
 - `InterProcessReadWriteLock`：分布式读写锁
 - `LeaderSelector`：Leader 选举
@@ -1534,38 +1570,43 @@ try {
 Chubby 是 Google 内部开发的分布式锁服务，2006 年在论文《The Chubby lock service for loosely-coupled distributed systems》中公开。ZooKeeper 是 Chubby 的开源实现和改进版本。
 
 **Chubby 的设计目标：**
+
 - 为松耦合的分布式系统提供粗粒度的分布式锁服务
 - 提供可靠的小文件存储
 - 支持分布式系统的 Master 选举
 
 **Chubby vs ZooKeeper 对比：**
 
-| 对比维度 | Chubby | ZooKeeper |
-|---------|--------|-----------|
-| 开源性 | 闭源（Google内部） | 开源（Apache） |
-| 一致性协议 | Paxos | ZAB（类Paxos） |
-| 设计定位 | 锁服务 | 通用协调服务 |
-| API风格 | 文件系统API | 树形节点API |
-| 客户端缓存 | 支持客户端缓存 | 不支持客户端缓存 |
-| 事件通知 | 支持 | 支持（Watcher） |
-| 会话机制 | 租约（Lease） | 会话（Session） |
-| 节点类型 | 文件/目录 | 4种ZNode类型 |
+| 对比维度  | Chubby       | ZooKeeper   |
+| ----- | ------------ | ----------- |
+| 开源性   | 闭源（Google内部） | 开源（Apache）  |
+| 一致性协议 | Paxos        | ZAB（类Paxos） |
+| 设计定位  | 锁服务          | 通用协调服务      |
+| API风格 | 文件系统API      | 树形节点API     |
+| 客户端缓存 | 支持客户端缓存      | 不支持客户端缓存    |
+| 事件通知  | 支持           | 支持（Watcher） |
+| 会话机制  | 租约（Lease）    | 会话（Session） |
+| 节点类型  | 文件/目录        | 4种ZNode类型   |
 
 **主要区别：**
 
 **1. 设计哲学不同**
+
 - Chubby：专注于锁服务，提供粗粒度锁
 - ZooKeeper：通用协调框架，提供原语让用户自己实现各种功能
 
 **2. 客户端缓存**
+
 - Chubby：支持客户端缓存数据，减少服务端压力
 - ZooKeeper：不支持客户端缓存，每次读取都访问服务端（Curator 的 Cache 是客户端实现的）
 
 **3. 一致性保证**
+
 - Chubby：提供更强的一致性保证
 - ZooKeeper：提供顺序一致性，读操作可能读到旧数据
 
 **4. 生态系统**
+
 - ZooKeeper 有丰富的开源生态（Curator、Kafka、HBase、Hadoop 等都依赖 ZooKeeper）
 
 **总结：**
@@ -1698,6 +1739,7 @@ echo mntr | nc localhost 2181
 Paxos 是 Leslie Lamport 提出的分布式一致性算法，是分布式系统领域最重要的算法之一。
 
 **Paxos 的角色：**
+
 - **Proposer（提议者）**：提出提案
 - **Acceptor（接受者）**：接受或拒绝提案
 - **Learner（学习者）**：学习已通过的提案
@@ -1734,30 +1776,255 @@ sequenceDiagram
 
 **ZAB 与 Paxos 的区别：**
 
-| 对比维度 | Paxos | ZAB |
-|---------|-------|-----|
-| 设计目标 | 通用分布式一致性 | 专为ZooKeeper设计 |
-| 事务顺序 | 不保证全局顺序 | 严格保证全局顺序 |
-| Leader | 无固定Leader | 有固定Leader |
-| 崩溃恢复 | 基本Paxos不处理 | 专门的崩溃恢复模式 |
-| 数据同步 | 不涉及 | 有完整的数据同步机制 |
-| 复杂度 | 理论算法，实现复杂 | 工程实现，更实用 |
+| 对比维度   | Paxos      | ZAB           |
+| ------ | ---------- | ------------- |
+| 设计目标   | 通用分布式一致性   | 专为ZooKeeper设计 |
+| 事务顺序   | 不保证全局顺序    | 严格保证全局顺序      |
+| Leader | 无固定Leader  | 有固定Leader     |
+| 崩溃恢复   | 基本Paxos不处理 | 专门的崩溃恢复模式     |
+| 数据同步   | 不涉及        | 有完整的数据同步机制    |
+| 复杂度    | 理论算法，实现复杂  | 工程实现，更实用      |
 
 **核心区别详解：**
 
 **1. 顺序性**
+
 - Paxos：每个提案独立，不保证提案间的顺序
 - ZAB：所有事务严格按 ZXID 顺序执行，保证全局顺序一致性
 
 **2. 主备模式**
+
 - Paxos：任何节点都可以发起提案
 - ZAB：只有 Leader 可以发起事务，简化了协调逻辑
 
 **3. 崩溃恢复**
+
 - Paxos：没有专门的崩溃恢复机制
 - ZAB：有完整的崩溃恢复模式，包括 Leader 选举和数据同步
 
 **总结：**
 
 ZAB 不是 Paxos 的简单实现，而是针对 ZooKeeper 场景专门设计的协议，在 Paxos 思想的基础上增加了顺序性保证和崩溃恢复机制，更适合实际工程应用。
+
+## 28. Zookeeper的典型应用场景
+
+ZooKeeper 凭借其分布式协调能力，在实际工程中有以下几大典型应用场景：
+
+### 1. 配置中心（Configuration Management）
+
+将系统配置集中存储在 ZooKeeper 中，所有服务节点通过 Watcher 监听配置变化，实现配置的动态推送。
+
+```mermaid
+graph LR
+    Admin[运维人员] -->|修改配置| ZK[ZooKeeper /config]
+    ZK -->|Watcher通知| S1[服务节点1]
+    ZK -->|Watcher通知| S2[服务节点2]
+    ZK -->|Watcher通知| S3[服务节点3]
+    S1 --> R1[热更新配置]
+    S2 --> R2[热更新配置]
+    S3 --> R3[热更新配置]
+```
+
+```java
+// 监听配置变化示例
+CuratorFramework client = ...;
+NodeCache cache = new NodeCache(client, "/config/db-url");
+cache.getListenable().addListener(() -> {
+    String newConfig = new String(cache.getCurrentData().getData());
+    System.out.println("配置更新: " + newConfig);
+    // 重新初始化数据库连接池
+});
+cache.start();
+```
+
+**典型使用：** Dubbo 的配置中心、Apollo 配置中心的底层存储。
+
+***
+
+### 2. 服务注册与发现（Service Registry & Discovery）
+
+服务提供者启动时在 ZooKeeper 创建临时节点注册自己，消费者通过监听节点列表实现动态服务发现。
+
+```mermaid
+sequenceDiagram
+    participant P as 服务提供者
+    participant ZK as ZooKeeper
+    participant C as 服务消费者
+
+    P->>ZK: 创建临时节点 /services/UserService/192.168.1.1:8080
+    C->>ZK: 订阅 /services/UserService 子节点列表
+    ZK-->>C: 返回 [192.168.1.1:8080]
+    C->>P: 直接调用服务
+    Note over P,ZK: 服务宕机，临时节点自动删除
+    ZK-->>C: Watcher通知，更新服务列表
+```
+
+**典型使用：** Dubbo 注册中心、早期 Spring Cloud 的服务发现。
+
+***
+
+### 3. 分布式锁（Distributed Lock）
+
+利用 ZooKeeper 的临时顺序节点实现公平的分布式锁，避免惊群效应。
+
+```mermaid
+graph TD
+    A[客户端A] -->|创建| N1[/lock/node-0000000001]
+    B[客户端B] -->|创建| N2[/lock/node-0000000002]
+    C[客户端C] -->|创建| N3[/lock/node-0000000003]
+    N1 -->|序号最小,获得锁| Lock[持有锁]
+    N2 -->|监听N1| Wait2[等待]
+    N3 -->|监听N2| Wait3[等待]
+    Lock -->|释放锁,删除N1| N2
+    N2 -->|序号最小,获得锁| Lock2[持有锁]
+```
+
+```java
+// 使用 Curator 实现分布式锁
+InterProcessMutex lock = new InterProcessMutex(client, "/distributed-lock");
+try {
+    if (lock.acquire(10, TimeUnit.SECONDS)) {
+        // 临界区：执行需要互斥的业务逻辑
+        doBusinessLogic();
+    }
+} finally {
+    lock.release();
+}
+```
+
+**优点：** 公平锁，不会出现饥饿；锁持有者宕机后临时节点自动删除，不会死锁。
+
+***
+
+### 4. Master 选举（Leader Election）
+
+多个节点竞争创建同一个临时节点，成功者成为 Master，其他节点监听该节点等待重新选举。
+
+```java
+// 使用 Curator 实现 Leader 选举
+LeaderSelector selector = new LeaderSelector(client, "/leader-election", 
+    new LeaderSelectorListenerAdapter() {
+        @Override
+        public void takeLeadership(CuratorFramework client) throws Exception {
+            System.out.println("我成为了 Leader！");
+            // 执行 Leader 职责，直到主动放弃或宕机
+            Thread.sleep(Long.MAX_VALUE);
+        }
+    });
+selector.autoRequeue(); // 放弃 Leader 后自动重新参与选举
+selector.start();
+```
+
+**典型使用：** Kafka 的 Controller 选举、HBase 的 HMaster 选举、Hadoop 的 NameNode HA。
+
+***
+
+### 5. 集群管理（Cluster Management）
+
+通过临时节点感知集群成员的上下线，实现动态集群管理。
+
+```java
+// 监听集群成员变化
+PathChildrenCache cache = new PathChildrenCache(client, "/cluster/nodes", true);
+cache.getListenable().addListener((c, event) -> {
+    switch (event.getType()) {
+        case CHILD_ADDED:
+            System.out.println("新节点上线: " + event.getData().getPath());
+            break;
+        case CHILD_REMOVED:
+            System.out.println("节点下线: " + event.getData().getPath());
+            break;
+    }
+});
+cache.start();
+```
+
+***
+
+### 6. 分布式队列（Distributed Queue）
+
+利用有序节点实现 FIFO 队列，生产者创建顺序节点，消费者按序号消费。
+
+```mermaid
+graph LR
+    P1[生产者1] -->|create -s /queue/item| Q1[/queue/item0000000001]
+    P2[生产者2] -->|create -s /queue/item| Q2[/queue/item0000000002]
+    C[消费者] -->|ls /queue 取最小序号| Q1
+    C -->|处理完删除| Del[delete /queue/item0000000001]
+```
+
+***
+
+### 7. 命名服务（Naming Service）
+
+为分布式系统中的资源提供全局唯一的名称，类似 DNS 的功能。
+
+```java
+// 生成全局唯一ID
+String path = client.create()
+    .withMode(CreateMode.EPHEMERAL_SEQUENTIAL)
+    .forPath("/id/seq-");
+// path = "/id/seq-0000000042"，提取数字作为全局唯一ID
+long uniqueId = Long.parseLong(path.replace("/id/seq-", ""));
+```
+
+***
+
+### 8. 屏障（Barrier）
+
+实现分布式屏障，等待所有参与者都到达某个状态后再继续执行，常用于分布式计算的同步点。
+
+```java
+// 使用 Curator 的 DistributedBarrier
+DistributedBarrier barrier = new DistributedBarrier(client, "/barrier");
+// 所有节点等待屏障解除
+barrier.waitOnBarrier();
+// 协调者解除屏障
+barrier.removeBarrier();
+```
+
+***
+
+### 应用场景总结
+
+```mermaid
+mindmap
+  root((ZooKeeper应用场景))
+    配置中心
+      动态配置推送
+      Apollo/Nacos底层
+    服务注册发现
+      Dubbo注册中心
+      微服务治理
+    分布式锁
+      公平锁
+      防死锁
+    Master选举
+      Kafka Controller
+      HBase HMaster
+      Hadoop NameNode HA
+    集群管理
+      节点上下线感知
+      动态扩缩容
+    分布式队列
+      FIFO队列
+      任务调度
+    命名服务
+      全局唯一ID
+      服务寻址
+    分布式屏障
+      同步点控制
+      MapReduce协调
+```
+
+| 场景       | 使用的ZooKeeper特性  | 典型框架                       |
+| -------- | --------------- | -------------------------- |
+| 配置中心     | 持久节点 + Watcher  | Apollo、Dubbo配置中心           |
+| 服务注册发现   | 临时节点 + Watcher  | Dubbo、早期Spring Cloud       |
+| 分布式锁     | 临时顺序节点          | Curator InterProcessMutex  |
+| Master选举 | 临时节点竞争创建        | Kafka、HBase、Hadoop         |
+| 集群管理     | 临时节点 + Watcher  | 各类分布式系统                    |
+| 分布式队列    | 持久顺序节点          | Curator DistributedQueue   |
+| 命名服务     | 顺序节点            | 分布式ID生成                    |
+| 分布式屏障    | 节点存在性 + Watcher | Curator DistributedBarrier |
 
